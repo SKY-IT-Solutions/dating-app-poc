@@ -1,52 +1,61 @@
-Express TypeScript PoC API with Prisma
 This is a small Proof of Concept (PoC) API built with Express, TypeScript, and Prisma, using Neon PostgreSQL for data storage. It implements JWT-based authentication and simplified match logic for a swipe-based application.
-Features
 
-Auth:
-/signup: Register a user with email and password (bcrypt hashed).
-/login: Authenticate user and return a signed JWT.
+## Features
 
+### Auth:
+- `/signup`: Register a user with email and password (bcrypt hashed).
+- `/login`: Authenticate user and return a signed JWT.
 
-Match Logic:
-/swipe: Store a user's swipe (left or right) on another user.
-If two users swipe "right" on each other, return "It's a match!".
+### Match Logic:
+- `/swipe`: Store a user's swipe (left or right) on another user.
+- If two users swipe "right" on each other, return "It's a match!".
 
+### Database: 
+Neon PostgreSQL with Prisma ORM.
 
-Database: Neon PostgreSQL with Prisma ORM.
+## Prerequisites
 
-Prerequisites
+- Node.js (v16 or higher)
+- Neon PostgreSQL account and database URL
+- Git
 
-Node.js (v16 or higher)
-Neon PostgreSQL account and database URL
-Git
+## Setup Instructions
 
-Setup Instructions
-
-Clone the Repository:
-git clone <your-repo-url>
+### Clone the Repository:
+```bash
+git clone your-repo-url
 cd <repo_name>
+```
 
-
-Install Dependencies:
+### Install Dependencies:
+```bash
 npm install
+```
 
-
-Set Up Environment Variables:Create a .env file in the root directory and add:
+### Set Up Environment Variables:
+Create a `.env` file in the root directory and add:
+```env
 DATABASE_URL=<your-neon-postgres-url>
 JWT_SECRET=<your-jwt-secret>
 PORT=3000
+```
 
-
-Set Up Prisma:Initialize the database schema:
+### Set Up Prisma:
+Initialize the database schema:
+```bash
 npx prisma migrate dev
 npx pirsma generate
+```
 
-Build and Run the Application:
+### Build and Run the Application:
+```bash
 npm run build
 npm run dev
+```
 
+## Project Structure
 
-Project Structure
+```
 poc-api/
 ├── prisma/
 │   └── schema.prisma          # Prisma schema
@@ -62,8 +71,9 @@ poc-api/
 ├── package.json               # Node.js dependencies and scripts
 ├── tsconfig.json              # TypeScript configuration
 └── README.md                  # Project documentation
+```
 
-Endpoints
+## Endpoints
 
 ### Three API Endpoints
 
@@ -84,20 +94,19 @@ Endpoints
 - **Body**: `{"targetId": number, "direction": "L"|"R"}`
 - **Response (200)**: `{"message": "Swipe recorded"}` or `{"message": "It's a match!"}`
 
+## Dependencies
 
-Dependencies
+- **express**: Web framework
+- **jsonwebtoken**: JWT handling
+- **bcrypt**: Password hashing
+- **@prisma/client**: Prisma ORM for PostgreSQL
+- **typescript**: Type safety
+- **dotenv**: Environment variable management
 
-express: Web framework
-jsonwebtoken: JWT handling
-bcrypt: Password hashing
-@prisma/client: Prisma ORM for PostgreSQL
-typescript: Type safety
-dotenv: Environment variable management
+## Notes
 
-Notes
-
-The API uses Neon PostgreSQL with Prisma for database operations.
-Passwords are hashed using bcrypt for security.
-JWT is used for authentication, validated in the swipe endpoint.
-The match logic checks for mutual right swipes and returns a match notification.
-The code follows standard TypeScript conventions with JSDoc comments for documentation.
+- The API uses Neon PostgreSQL with Prisma for database operations.
+- Passwords are hashed using bcrypt for security.
+- JWT is used for authentication, validated in the swipe endpoint.
+- The match logic checks for mutual right swipes and returns a match notification.
+- The code follows standard TypeScript conventions with JSDoc comments for documentation.
