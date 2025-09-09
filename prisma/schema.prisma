@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  swipes   Swipe[]  @relation("UserSwipes")
+  swipedBy Swipe[]  @relation("TargetSwipes")
+}
+
+model Swipe {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  targetId  Int
+  direction String   @db.Char(1)
+  createdAt DateTime @default(now())
+  user      User     @relation("UserSwipes", fields: [userId], references: [id])
+  target    User     @relation("TargetSwipes", fields: [targetId], references: [id])
+
+  @@unique([userId, targetId])                //ensure only one swipe per user-pair target
+  @@index([userId, targetId, direction])      // Composite index for fast mutual swipe checks
+}

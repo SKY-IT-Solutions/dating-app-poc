@@ -1,0 +1,180 @@
+# PoC API Workflow: Signup, Login, Swipe, and Match for Alice, Bob, Charlie
+# Base URL: http://localhost:3000
+# Note: Copy JWT tokens from login responses and paste into swipe Authorization headers.
+# Workflow: Alice ↔ Bob match, Bob ↔ Charlie match, no Alice ↔ Charlie match.
+# Tests: No self-swipes, one swipe per user-target pair (updates direction if changed).
+
+# 1. Signup Alice
+POST http://localhost:3000/auth/signup
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "password123"
+}
+# Expected: 201, {"message": "User created successfully"}
+
+###
+
+# 2. Signup Bob
+POST http://localhost:3000/auth/signup
+Content-Type: application/json
+
+{
+  "email": "bob@example.com",
+  "password": "password123"
+}
+# Expected: 201, {"message": "User created successfully"}
+
+###
+
+# 3. Signup Charlie
+POST http://localhost:3000/auth/signup
+Content-Type: application/json
+
+{
+  "email": "charlie@example.com",
+  "password": "password123"
+}
+# Expected: 201, {"message": "User created successfully"}
+
+###
+
+# 4. Login Alice (Copy token for swipes)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "password123"
+}
+# Expected: 200, {"token": "<jwt-token>"}
+
+###
+
+# 5. Login Bob (Copy token for swipes)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "bob@example.com",
+  "password": "password123"
+}
+# Expected: 200, {"token": "<jwt-token>"}
+
+###
+
+# 6. Login Charlie (Copy token for swipes)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "charlie@example.com",
+  "password": "password123"
+}
+# Expected: 200, {"token": "<jwt-token>"}
+
+###
+
+# 7. Swipe: Alice Right on Bob
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization: <paste-alice-token-here>
+
+{
+  "targetId": 2,
+  "direction": "R"
+}
+# Expected: 200, {"message": "Swipe recorded"}
+
+###
+
+# 8. Swipe: Bob Right on Alice (Match)
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization: <paste-bob-token-here>
+
+{
+  "targetId": 1,
+  "direction": "R"
+}
+# Expected: 200, {"message": "It's a match!"}
+
+###
+
+# 9. Swipe: Alice Left on Bob (Updates A→B swipe)
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization: <paste-alice-token-here>
+
+{
+  "targetId": 2,
+  "direction": "L"
+}
+# Expected: 200, {"message": "Swipe recorded"}
+# Note: Updates existing A→B swipe to L (no new row)
+
+###
+
+# 10. Swipe: Alice Left on Charlie
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization: <paste-alice-token-here>
+
+{
+  "targetId": 3,
+  "direction": "L"
+}
+# Expected: 200, {"message": "Swipe recorded"}
+
+###
+
+# 11. Swipe: Charlie Right on Alice (No Match)
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization:  <paste-charlie-token-here>
+
+{
+  "targetId": 1,
+  "direction": "R"
+}
+# Expected: 200, {"message": "Swipe recorded"}
+
+###
+
+# 12. Swipe: Bob Right on Charlie
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization: <paste-bob-token-here>
+
+{
+  "targetId": 3,
+  "direction": "R"
+}
+# Expected: 200, {"message": "Swipe recorded"}
+
+###
+
+# 13. Swipe: Charlie Right on Bob (Match)
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization:  <paste-charlie-token-here>
+
+{
+  "targetId": 2,
+  "direction": "R"
+}
+# Expected: 200, {"message": "It's a match!"}
+
+###
+
+# 14. Swipe: Alice on Alice (Self-Swipe, Error)
+POST http://localhost:3000/swipe
+Content-Type: application/json
+Authorization: <paste-alice-token-here>
+
+{
+  "targetId": 1,
+  "direction": "R"
+}
+# Expected: 400, {"message": "Cannot swipe on yourself"}
