@@ -1,0 +1,43 @@
+# Socket.dev configuration
+# https://docs.socket.dev/docs/socket-yml
+#
+# This file is read by the Socket GitHub App once it's installed on the org.
+# Install: https://github.com/apps/socket-security  →  install on SKY-IT-Solutions
+
+version: 2
+
+projectIgnorePaths:
+  - "node_modules/**"
+  - "vendor/**"
+  - "dist/**"
+  - "build/**"
+  - ".next/**"
+  - "out/**"
+  - "coverage/**"
+  - "**/*.min.js"
+
+# Severity thresholds — anything at or above this fails the PR check.
+issueRules:
+  malware: error
+  gptMalware: error
+  shellAccess: error
+  networkAccess: warn
+  fsAccess: warn
+  envVars: warn
+  installScripts: error
+  obfuscatedFile: error
+  obfuscatedRequire: error
+  unmaintained: warn
+  unstableOwnership: warn
+  newAuthor: warn
+  troll: error
+  typeSquat: error
+  didYouMean: warn
+  badEncoding: error
+  homoglyphs: error
+  binScriptConfusion: error
+
+githubApp:
+  enabled: true
+  pullRequestAlertsEnabled: true
+  projectReportsEnabled: true

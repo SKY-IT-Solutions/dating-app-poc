@@ -12,8 +12,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
-.env
-.env.local
 .env.*.local
 
 # TypeScript
@@ -35,3 +33,4 @@ Thumbs.db
 
 # Optional REPL history
 .node_repl_history
+config.bat
