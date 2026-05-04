@@ -1,0 +1,56 @@
+name: Security checks
+
+on:
+  pull_request:
+  push:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  malware-scan:
+    name: PolinRider malware scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run scan
+        run: |
+          if [ -f scripts/security/scan-malware.sh ]; then
+            # PR: fast scan (skips build output to avoid noise on legit dist/ changes)
+            # Push to default branch: deep scan (includes dist/, build/, .next/, etc.)
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              bash scripts/security/scan-malware.sh all
+            else
+              bash scripts/security/scan-malware.sh deep
+            fi
+          else
+            echo "::error::scripts/security/scan-malware.sh missing"
+            exit 1
+          fi
+
+      - name: Comment on PR if blocked
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [
+                '## 🚨 Malware scan failed',
+                '',
+                'This PR contains code matching known PolinRider supply-chain malware markers.',
+                '**Merge is blocked** until the markers are removed.',
+                '',
+                'See the failing job log for the exact files. Common location: a single long obfuscated line at the **bottom** of a `*.config.js` / `*.config.mjs` / similar file.',
+                '',
+                'If you did not write that line, **your dev machine may be compromised** — contact your security team / org owner now and rotate your GitHub PAT, SSH key, npm token, and any `.env` secrets.'
+              ].join('\n')
+            });

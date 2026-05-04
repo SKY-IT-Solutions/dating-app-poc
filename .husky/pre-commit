@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+#
+# .husky/pre-commit
+# -----------------
+# Three-step gate:
+#   1. Malware marker scan (always)
+#   2. Lint (if `lint` script exists in package.json)
+#   3. Build (if `build` script exists in package.json — i.e. frontend repos)
+#
+# Each step fails fast. Total budget on a clean commit: usually <30s for
+# backends, 1-5 min for frontends with full builds.
+#
+# Bypassable locally with --no-verify, but the same checks run server-side
+# in .github/workflows/security.yml so bypasses are caught at PR time.
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Allow developers to skip slow steps in emergencies (still runs malware scan).
+# Usage:  SKIP_BUILD=1 git commit -m "..."   /   SKIP_LINT=1 git commit -m "..."
+SKIP_LINT="${SKIP_LINT:-}"
+SKIP_BUILD="${SKIP_BUILD:-}"
+
+# -------- Step 1: Malware scan (NEVER skippable) --------
+if [ -f scripts/security/scan-malware.sh ]; then
+  bash scripts/security/scan-malware.sh staged || exit $?
+else
+  echo "WARNING: scripts/security/scan-malware.sh missing — re-run security rollout" >&2
+fi
+
+# -------- Step 2: Lint --------
+if [ -z "$SKIP_LINT" ] && [ -f package.json ]; then
+  if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)" 2>/dev/null; then
+    echo "→ Running lint..."
+    if ! npm run lint --silent; then
+      echo ""
+      echo "=========================================================="
+      echo "  BLOCKED — lint failed"
+      echo "=========================================================="
+      echo "Fix the lint errors above, then re-commit."
+      echo "To bypass for an emergency commit:  SKIP_LINT=1 git commit ..."
+      echo "(Don't make this a habit — server CI will reject it anyway.)"
+      exit 1
+    fi
+  fi
+fi
+
+# -------- Step 3: Build (frontend only — detected by `build` script) --------
+if [ -z "$SKIP_BUILD" ] && [ -f package.json ]; then
+  if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)" 2>/dev/null; then
+    echo "→ Running build... (this can take a few minutes for large frontends)"
+
+    # 5-minute timeout to prevent stuck builds from hanging the commit forever.
+    BUILD_TIMEOUT="${BUILD_TIMEOUT:-300}"
+    if command -v gtimeout >/dev/null 2>&1; then
+      TIMEOUT=gtimeout
+    elif command -v timeout >/dev/null 2>&1; then
+      TIMEOUT=timeout
+    else
+      TIMEOUT=""
+    fi
+
+    if [ -n "$TIMEOUT" ]; then
+      $TIMEOUT "$BUILD_TIMEOUT" npm run build --silent
+      RC=$?
+    else
+      npm run build --silent
+      RC=$?
+    fi
+
+    if [ $RC -ne 0 ]; then
+      echo ""
+      echo "=========================================================="
+      echo "  BLOCKED — build failed"
+      echo "=========================================================="
+      if [ "$RC" = "124" ]; then
+        echo "Build exceeded ${BUILD_TIMEOUT}s timeout. If your build legitimately"
+        echo "takes longer, set BUILD_TIMEOUT=600 (or higher) in the env."
+      else
+        echo "Fix the build errors above, then re-commit."
+      fi
+      echo "To bypass for an emergency commit:  SKIP_BUILD=1 git commit ..."
+      exit 1
+    fi
+  fi
+fi
+
+exit 0
